@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Inventory Management System</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 1s ease;
+        }
+        
+        h1 {
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            color: var(--gray);
+            font-size: 1.2rem;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 1s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-title {
+            color: var(--dark);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--dark);
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+        }
+        
+        .btn-secondary:hover {
+            background: #27ae60;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .inventory-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .tool-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            animation: slideInRight 0.5s ease;
+        }
+        
+        .tool-item:last-child {
+            border-bottom: none;
+        }
+        
+        .tool-info h3 {
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+        
+        .tool-info p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+        
+        .tool-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .tool-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--primary);
+            transition: color 0.3s ease;
+        }
+        
+        .tool-btn:hover {
+            color: #2980b9;
+            transform: scale(1.1);
+        }
+        
+        .report-section {
+            margin-top: 30px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .report-results {
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            animation: fadeIn 1s ease;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            animation: slideInRight 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+            z-index: 1000;
+        }
+        
+        .success {
+            background: var(--secondary);
+        }
+        
+        .error {
+            background: var(--danger);
+        }
+        
+        .loading-text {
+            text-align: center;
+            color: var(--gray);
+            padding: 20px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; visibility: hidden; }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-tools"></i> Tool Inventory </h1>
+        </header>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-plus-circle"></i> Add Tool</h2>
+                <div class="form-group">
+                    <label for="toolName">Tool Name *</label>
+                    <input type="text" id="toolName" required>
+                </div>
+                <div class="form-group">
+                    <label for="toolSize">Size (optional)</label>
+                    <input type="text" id="toolSize">
+                </div>
+                <div class="form-group">
+                    <label for="toolQuantity">Quantity *</label>
+                    <input type="number" id="toolQuantity" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="addDate">Date *</label>
+                    <input type="date" id="addDate" required>
+                </div>
+                <button id="addToolBtn" class="btn-secondary">Add Tool to Inventory</button>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-list"></i> Current Inventory</h2>
+                <div class="inventory-list" id="inventoryList">
+                    <p class="loading-text">Loading inventory...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title"><i class="fas fa-minus-circle"></i> Remove Tool</h2>
+            <div class="form-group">
+                <label for="removeTool">Select Tool to Remove *</label>
+                <select id="removeTool" required>
+                    <option value="">Select a tool</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="removeQuantity">Quantity to Remove *</label>
+                <input type="number" id="removeQuantity" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="removeDate">Date *</label>
+                <input type="date" id="removeDate" required>
+            </div>
+            <div class="form-group">
+                <label for="removeReason">Reason for Removal *</label>
+                <select id="removeReason" required>
+                    <option value="">Select a reason</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="lost">Lost</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group" id="reasonDetailsGroup" style="display: none;">
+                <label for="reasonDetails">Reason Details</label>
+                <textarea id="reasonDetails" rows="3"></textarea>
+            </div>
+            <button id="removeToolBtn" class="btn-danger">Remove Tool from Inventory</button>
+        </div>
+        
+        <div class="card report-section">
+            <h2 class="card-title"><i class="fas fa-chart-bar"></i> Generate Reports</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="reportType">Report Type</label>
+                    <select id="reportType">
+                        <option value="inventory">Current Inventory</option>
+                        <option value="damaged">Damaged Tools Report</option>
+                        <option value="lost">Lost Tools Report</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="timeRange">Time Range</label>
+                    <select id="timeRange">
+                        <option value="day">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="year">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div class="filter-group" id="customRangeGroup" style="display: none;">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+            <button id="generateReportBtn">Generate Report</button>
+            
+            <div class="report-results">
+                <table id="reportTable">
+                    <thead>
+                        <tr>
+                            <th>Tool Name</th>
+                            <th>Size</th>
+                            <th>Quantity</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">No data to display. Generate a report first.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyASKBphXvd4QyuYHYcDLRki8e_Xt0SZtfk",
+            authDomain: "tool-inventory-73457.firebaseapp.com",
+            projectId: "tool-inventory-73457",
+            storageBucket: "tool-inventory-73457.firebasestorage.app",
+            messagingSenderId: "285155918076",
+            appId: "1:285155918076:web:c64ac885e22b4e6d01d779",
+            measurementId: "G-HY7GCF1SPT"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // DOM Elements
+        const addToolBtn = document.getElementById('addToolBtn');
+        const removeToolBtn = document.getElementById('removeToolBtn');
+        const generateReportBtn = document.getElementById('generateReportBtn');
+        const removeReason = document.getElementById('removeReason');
+        const reasonDetailsGroup = document.getElementById('reasonDetailsGroup');
+        const timeRange = document.getElementById('timeRange');
+        const customRangeGroup = document.getElementById('customRangeGroup');
+        const inventoryList = document.getElementById('inventoryList');
+        const removeToolSelect = document.getElementById('removeTool');
+        const reportTableBody = document.getElementById('reportTableBody');
+        
+        // Event Listeners
+        addToolBtn.addEventListener('click', addTool);
+        removeToolBtn.addEventListener('click', removeTool);
+        generateReportBtn.addEventListener('click', generateReport);
+        removeReason.addEventListener('change', toggleReasonDetails);
+        timeRange.addEventListener('change', toggleCustomRange);
+        
+        // Functions
+        function addTool() {
+            const name = document.getElementById('toolName').value;
+            const size = document.getElementById('toolSize').value;
+            const quantity = document.getElementById('toolQuantity').value;
+            const date = document.getElementById('addDate').value;
+            
+            if (!name || !quantity || !date) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            // Add to Firebase
+            db.collection('tools').add({
+                name,
+                size: size || 'N/A',
+                quantity: parseInt(quantity),
+                date,
+                status: 'in stock',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                showNotification('Tool added successfully!', 'success');
+                clearAddForm();
+                // Refresh inventory list
+                loadInventory();
+            })
+            .catch((error) => {
+                showNotification('Error adding tool: ' + error.message, 'error');
+            });
+        }
+        
+        function removeTool() {
+            const toolId = document.getElementById('removeTool').value;
+            const quantity = document.getElementById('removeQuantity').value;
+            const date = document.getElementById('removeDate').value;
+            const reason = document.getElementById('removeReason').value;
+            const reasonDetails = document.getElementById('reasonDetails').value;
+            
+            if (!toolId || !quantity || !date || !reason) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            // Get the tool first to check current quantity
+            db.collection('tools').doc(toolId).get()
+            .then((doc) => {
+                if (doc.exists) {
+                    const tool = doc.data();
+                    const currentQty = tool.quantity;
+                    const removeQty = parseInt(quantity);
+                    
+                    if (removeQty > currentQty) {
+                        showNotification('Cannot remove more than available quantity', 'error');
+                        return;
+                    }
+                    
+                    // Update the tool quantity or remove if all are taken
+                    if (removeQty === currentQty) {
+                        // Remove the tool entirely
+                        return db.collection('tools').doc(toolId).delete();
+                    } else {
+                        // Update quantity
+                        return db.collection('tools').doc(toolId).update({
+                            quantity: currentQty - removeQty
+                        });
+                    }
+                }
+            })
+            .then(() => {
+                // Add to removal history
+                return db.collection('removals').add({
+                    toolId,
+                    quantity: parseInt(quantity),
+                    date,
+                    reason,
+                    reasonDetails,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            })
+            .then(() => {
+                showNotification('Tool removed successfully!', 'success');
+                clearRemoveForm();
+                loadInventory();
+            })
+            .catch((error) => {
+                showNotification('Error removing tool: ' + error.message, 'error');
+            });
+        }
+        
+        function generateReport() {
+            const reportType = document.getElementById('reportType').value;
+            const timeRange = document.getElementById('timeRange').value;
+            
+            // Clear previous results
+            reportTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Loading report data...</td></tr>';
+            
+            if (reportType === 'inventory') {
+                // Show current inventory
+                db.collection('tools').get()
+                .then((querySnapshot) => {
+                    reportTableBody.innerHTML = '';
+                    if (querySnapshot.empty) {
+                        reportTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No tools in inventory</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const tool = doc.data();
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${tool.name}</td>
+                            <td>${tool.size}</td>
+                            <td>${tool.quantity}</td>
+                            <td>${tool.date}</td>
+                            <td>In Stock</td>
+                        `;
+                        reportTableBody.appendChild(row);
+                    });
+                })
+                .catch((error) => {
+                    reportTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading report: ' + error.message + '</td></tr>';
+                });
+            } else {
+                // Show removal reports based on reason
+                let reasonFilter = reportType === 'damaged' ? 'damaged' : 'lost';
+                
+                db.collection('removals')
+                  .where('reason', '==', reasonFilter)
+                  .get()
+                .then((querySnapshot) => {
+                    reportTableBody.innerHTML = '';
+                    if (querySnapshot.empty) {
+                        reportTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No ${reasonFilter} tools found</td></tr>`;
+                        return;
+                    }
+                    
+                    // We need to get tool details for each removal
+                    const promises = [];
+                    
+                    querySnapshot.forEach((doc) => {
+                        const removal = doc.data();
+                        const promise = db.collection('tools').doc(removal.toolId).get()
+                            .then((toolDoc) => {
+                                if (toolDoc.exists) {
+                                    const tool = toolDoc.data();
+                                    const row = document.createElement('tr');
+                                    row.innerHTML = `
+                                        <td>${tool.name}</td>
+                                        <td>${tool.size}</td>
+                                        <td>${removal.quantity}</td>
+                                        <td>${removal.date}</td>
+                                        <td>${removal.reason.charAt(0).toUpperCase() + removal.reason.slice(1)}</td>
+                                    `;
+                                    reportTableBody.appendChild(row);
+                                }
+                            });
+                        promises.push(promise);
+                    });
+                    
+                    return Promise.all(promises);
+                })
+                .catch((error) => {
+                    reportTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading report: ' + error.message + '</td></tr>';
+                });
+            }
+        }
+        
+        function toggleReasonDetails() {
+            if (removeReason.value === 'other') {
+                reasonDetailsGroup.style.display = 'block';
+            } else {
+                reasonDetailsGroup.style.display = 'none';
+            }
+        }
+        
+        function toggleCustomRange() {
+            if (timeRange.value === 'custom') {
+                customRangeGroup.style.display = 'block';
+            } else {
+                customRangeGroup.style.display = 'none';
+            }
+        }
+        
+        function loadInventory() {
+            // Clear current inventory list
+            inventoryList.innerHTML = '<p class="loading-text">Loading inventory...</p>';
+            removeToolSelect.innerHTML = '<option value="">Select a tool</option>';
+            
+            // Get tools from Firebase
+            db.collection('tools').get()
+            .then((querySnapshot) => {
+                inventoryList.innerHTML = '';
+                removeToolSelect.innerHTML = '<option value="">Select a tool</option>';
+                
+                if (querySnapshot.empty) {
+                    inventoryList.innerHTML = '<p class="loading-text">No tools in inventory</p>';
+                    return;
+                }
+                
+                querySnapshot.forEach((doc) => {
+                    const tool = doc.data();
+                    const toolItem = document.createElement('div');
+                    toolItem.className = 'tool-item';
+                    toolItem.innerHTML = `
+                        <div class="tool-info">
+                            <h3>${tool.name}</h3>
+                            <p>Size: ${tool.size} | Quantity: ${tool.quantity} | Added: ${tool.date}</p>
+                        </div>
+                        <div class="tool-actions">
+                            <button class="tool-btn remove-btn" data-id="${doc.id}"><i class="fas fa-minus-circle"></i></button>
+                        </div>
+                    `;
+                    inventoryList.appendChild(toolItem);
+                    
+                    // Add to remove tool dropdown
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${tool.name} (${tool.size}) - Qty: ${tool.quantity}`;
+                    removeToolSelect.appendChild(option);
+                });
+                
+                // Add event listeners to remove buttons
+                document.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const toolId = this.getAttribute('data-id');
+                        document.getElementById('removeTool').value = toolId;
+                        // Scroll to remove section
+                        document.getElementById('removeTool').closest('.card').scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    });
+                });
+            })
+            .catch((error) => {
+                inventoryList.innerHTML = '<p class="loading-text">Error loading inventory: ' + error.message + '</p>';
+                console.error("Error loading inventory: ", error);
+            });
+        }
+        
+        function clearAddForm() {
+            document.getElementById('toolName').value = '';
+            document.getElementById('toolSize').value = '';
+            document.getElementById('toolQuantity').value = '';
+            document.getElementById('addDate').value = '';
+        }
+        
+        function clearRemoveForm() {
+            document.getElementById('removeTool').value = '';
+            document.getElementById('removeQuantity').value = '';
+            document.getElementById('removeDate').value = '';
+            document.getElementById('removeReason').value = '';
+            document.getElementById('reasonDetails').value = '';
+            reasonDetailsGroup.style.display = 'none';
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Remove notification after animation
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Initialize
+        document.getElementById('addDate').valueAsDate = new Date();
+        document.getElementById('removeDate').valueAsDate = new Date();
+        
+        // Load initial inventory
+        loadInventory();
+    </script>
+</body>
+</html>

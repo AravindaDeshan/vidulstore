@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Management System | Vidul BioMass</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c786c;
+            --secondary-color: #004445;
+            --accent-color: #f8b400;
+            --light-color: #faf5e4;
+            --dark-color: #333;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f5f5;
+            color: var(--dark-color);
+            overflow-x: hidden;
+        }
+
+        /* Login Page */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            animation: gradientBG 15s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .login-box {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 400px;
+            transform: translateY(0);
+            transition: var(--transition);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-box h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-box img {
+            display: block;
+            margin: 0 auto 1.5rem;
+            width: 120px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(44, 120, 108, 0.2);
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header h2 {
+            font-size: 1rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .logout-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .logout-btn:hover {
+            background-color: #e0a800;
+        }
+
+        .content-container {
+            display: flex;
+            min-height: calc(100vh - 70px);
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: white;
+            box-shadow: var(--shadow);
+            padding: 1.5rem 0;
+            transition: var(--transition);
+            z-index: 90;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--dark-color);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background-color: rgba(44, 120, 108, 0.1);
+            border-left-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar-menu i {
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background-color: #f9f9f9;
+        }
+
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .card .value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .card .description {
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .card.active-jobs {
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .card.returned-items {
+            border-top: 4px solid var(--success-color);
+        }
+
+        .card.recent-activities {
+            border-top: 4px solid var(--accent-color);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: var(--accent-color);
+        }
+
+        .recent-table {
+            width: 100%;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .recent-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .recent-table th, .recent-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .recent-table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+
+        }
+
+        .recent-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .recent-table tr:hover {
+            background-color: rgba(44, 120, 108, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.issued {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #d39e00;
+        }
+
+        .status-badge.returned {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: #218838;
+        }
+
+        /* Form Styles */
+        .form-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control {
+            margin-bottom: 1rem;
+        }
+
+        .form-control label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-control input, .form-control select, .form-control textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control input:focus, .form-control select:focus, .form-control textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(44, 120, 108, 0.2);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        /* Items List */
+        .items-list {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .search-bar {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-bar input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 300px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        /* Report Section */
+        .report-filters {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            flex: 1;
+        }
+
+        .generate-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+        }
+
+        .generate-btn:hover {
+            background-color: #e0a800;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--secondary-color);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.5s ease forwards;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .content-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .sidebar-menu {
+                display: flex;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+            }
+            
+            .sidebar-menu li {
+                margin-right: 1rem;
+                margin-bottom: 0;
+                white-space: nowrap;
+            }
+            
+            .sidebar-menu a {
+                padding: 0.5rem 1rem;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+            }
+            
+            .sidebar-menu a:hover, .sidebar-menu a.active {
+                border-left: none;
+                border-bottom-color: var(--primary-color);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1rem;
+            }
+            
+            .header h1, .header h2 {
+                margin-bottom: 0.5rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .search-bar input {
+                width: 100%;
+            }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .modal-header .close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+            transition: var(--transition);
+        }
+
+        .modal-header .close:hover {
+            color: var(--danger-color);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container" id="login-page">
+        <div class="login-box">
+     
+            <h2>Store Management System</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+                <div class="error-message" id="login-error"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="main-container" id="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div>
+                <h1>STORE MANAGEMENT SYSTEM</h1>
+                <h2>Vidul Bio-Mass (Pvt) Ltd , Dehiattakandiya</h2>
+            </div>
+            <button class="logout-btn" id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <div class="content-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <ul class="sidebar-menu">
+                    <li><a href="#" class="active" id="dashboard-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="#" id="issue-items-link"><i class="fas fa-arrow-circle-up"></i> Issue Items</a></li>
+                    <li><a href="#" id="return-items-link"><i class="fas fa-arrow-circle-down"></i> Return Items</a></li>
+                    <li><a href="#" id="reports-link"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                    <li><a href="tool-inventory.html" id="tool-inventory-link"><i class="fas fa-tools"></i> Tool Inventory</a></li>
+                </ul>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="main-content" id="main-content">
+                <!-- Dashboard Content (Default) -->
+                <div id="dashboard-content">
+                    <h2 class="section-title">Dashboard Overview</h2>
+                    
+                    <div class="dashboard-cards">
+                        <div class="card active-jobs">
+                            <h3>Active Jobs</h3>
+                            <div class="value" id="active-jobs-count">0</div>
+                            <div class="description">Items currently issued</div>
+                        </div>
+                        
+                        <div class="card returned-items">
+                            <h3>Items Checked Out</h3>
+                            <div class="value" id="returned-items-count">0</div>
+                            <div class="description">Items returned today</div>
+                        </div>
+                        
+                        <div class="card recent-activities">
+                            <h3>Recent Activities</h3>
+                            <div class="value" id="recent-activities-count">0</div>
+                            <div class="description">Today's transactions</div>
+                        </div>
+                    </div>
+                    
+                    <h2 class="section-title">Recent Transactions</h2>
+                    <div class="recent-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Item Name</th>
+                                    <th>Quantity</th>
+                                    <th>Issued To</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-transactions">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Issue Items Content -->
+                <div id="issue-items-content" style="display: none;">
+                    <h2 class="section-title">Issue Items from Store</h2>
+                    
+                    <div class="form-container">
+                        <form id="issue-item-form">
+                            <div class="form-row">
+                                <div class="form-control">
+                                    <label for="issued-to">Person Name</label>
+                                    <input type="text" id="issued-to" placeholder="Enter person name" required>
+                                </div>
+                                <div class="form-control">
+                                    <label for="purpose">Purpose</label>
+                                    <input type="text" id="purpose" placeholder="Enter purpose" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-control">
+                                    <label for="issue-date">Date</label>
+                                    <input type="date" id="issue-date" required>
+                                </div>
+                            </div>
+                            
+                            <h3 style="margin: 1.5rem 0 1rem; color: var(--primary-color);">Items to Issue</h3>
+                            
+                            <div id="items-container">
+                                <div class="item-row form-row" data-index="0">
+                                    <div class="form-control">
+                                        <label for="item-name-0">Item Name</label>
+                                        <input type="text" id="item-name-0" placeholder="Enter item name" required>
+                                    </div>
+                                    <div class="form-control">
+                                        <label for="item-quantity-0">Quantity</label>
+                                        <input type="number" id="item-quantity-0" placeholder="Enter quantity" min="1" required>
+                                    </div>
+                                    <div class="form-control">
+                                        <label for="item-unit-0">Unit (optional)</label>
+                                        <input type="text" id="item-unit-0" placeholder="kg, liters, etc.">
+                                    </div>
+                                    <div class="form-control" style="align-self: flex-end;">
+                                        <button type="button" class="btn btn-secondary remove-item" style="padding: 0.75rem;" disabled>
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-secondary" id="add-item-btn" style="margin-top: 1rem;">
+                                <i class="fas fa-plus"></i> Add Another Item
+                            </button>
+                            
+                            <div style="margin-top: 2rem;">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Issue Items
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <h2 class="section-title" style="margin-top: 2rem;">Recently Issued Items</h2>
+                    <div class="items-list">
+                        <div class="search-bar">
+                            <input type="text" id="search-issued" placeholder="Search issued items...">
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Job ID</th>
+                                        <th>Issued To</th>
+                                        <th>Purpose</th>
+                                        <th>Date</th>
+                                        <th>Items</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="issued-items-table">
+                                    <!-- Issued items will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Return Items Content -->
+                <div id="return-items-content" style="display: none;">
+                    <h2 class="section-title">Return Items to Store</h2>
+                    
+                    <div class="form-container">
+                        <form id="return-item-form">
+                            <div class="form-control">
+                                <label for="return-job-id">Job ID</label>
+                                <input type="text" id="return-job-id" placeholder="Enter Job ID" required>
+                            </div>
+                            
+                            <div style="margin-top: 1.5rem;">
+                                <button type="button" class="btn btn-primary" id="load-job-items">
+                                    <i class="fas fa-search"></i> Load Items
+                                </button>
+                            </div>
+                            
+                            <div id="return-items-container" style="margin-top: 2rem; display: none;">
+                                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Items to Return</h3>
+                                
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background-color: #f5f5f5;">
+                                            <th style="padding: 5rem; text-align: left;">Item Name</th>
+                                            <th style="padding: 5rem; text-align: left;">Issued Qty</th>
+                                            <th style="padding: 5rem; text-align: left;">Return Qty</th>
+                                            <th style="padding: 5rem; text-align: left;">Unit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="items-to-return">
+                                        <!-- Items to return will be loaded here -->
+                                    </tbody>
+                                </table>
+                                
+                                <div class="form-control" style="margin-top: 1.5rem;">
+                                    <label for="return-notes">Notes (optional)</label>
+                                    <textarea id="return-notes" rows="3" placeholder="Any notes about the return"></textarea>
+                                </div>
+                                
+                                <div style="margin-top: 2rem;">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-check-circle"></i> Confirm Return
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <h2 class="section-title" style="margin-top: 2rem;">Recent Returns</h2>
+                    <div class="items-list">
+                        <div class="search-bar">
+                            <input type="text" id="search-returns" placeholder="Search returned items...">
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Return ID</th>
+                                        <th>Job ID</th>
+                                        <th>Return Date</th>
+                                        <th>Items Returned</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="returned-items-table">
+                                    <!-- Returned items will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Content -->
+                <div id="reports-content" style="display: none;">
+                    <h2 class="section-title">Generate Reports</h2>
+                    
+                    <div class="report-filters">
+                        <form id="report-form">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="report-type">Report Type</label>
+                                    <select id="report-type" class="form-control">
+                                        <option value="issued">Issued Items</option>
+                                        <option value="returned">Returned Items</option>
+                                        <option value="inventory">Inventory</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="time-period">Time Period</label>
+                                    <select id="time-period" class="form-control">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="annual">Annual</option>
+                                        <option value="custom">Custom Date Range</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="filter-row" id="custom-date-range" style="display: none;">
+                                <div class="filter-group">
+                                    <label for="start-date">Start Date</label>
+                                    <input type="date" id="start-date" class="form-control">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="end-date">End Date</label>
+                                    <input type="date" id="end-date" class="form-control">
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 1.5rem;">
+                                <button type="submit" class="btn generate-btn">
+                                    <i class="fas fa-file-pdf"></i> Generate Report
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div id="report-results" style="display: none;">
+                        <h2 class="section-title">Report Results</h2>
+                        <div class="items-list">
+                            <div class="search-bar">
+                                <div style="display: flex; justify-content: space-between; width: 100%;">
+                                    <span id="report-title">Issued Items Report</span>
+                                    
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Date</th>
+                                            <th>Item Name</th>
+                                            <th>Quantity</th>
+                                            <th>Unit</th>
+                                            <th>Issued To</th>
+                                            <th>Purpose</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-results-table">
+                                        <!-- Report results will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>All Rights Reserved | M.G.A.D Dharmasiri</p>
+            <p id="current-year"></p>
+        </footer>
+    </div>
+
+    <!-- View Items Modal -->
+    <div class="modal" id="view-items-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Issued Items Details</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p><strong>Job ID:</strong> <span id="modal-job-id"></span></p>
+                <p><strong>Issued To:</strong> <span id="modal-issued-to"></span></p>
+                <p><strong>Purpose:</strong> <span id="modal-purpose"></span></p>
+                <p><strong>Date:</strong> <span id="modal-date"></span></p>
+                
+                <h4 style="margin: 1.5rem 0 1rem; color: var(--primary-color);">Items Issued</h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f5f5f5;">
+                            <th style="padding: 5rem; text-align: left;">Item Name</th>
+                            <th style="padding: 5rem; text-align: left;">Quantity</th>
+                            <th style="padding: 5rem; text-align: left;">Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-items-list">
+                        <!-- Items will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCipvfgkNkPFOAlB1j1pd3KuTo6aApYbGQ",
+  authDomain: "vidulbiomass-store.firebaseapp.com",
+  projectId: "vidulbiomass-store",
+  storageBucket: "vidulbiomass-store.appspot.com",
+  messagingSenderId: "884383897011",
+  appId: "1:884383897011:web:d0a28ece7b04e8485927c6",
+  measurementId: "G-XEVCLPJ42H"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const loginPage = document.getElementById('login-page');
+        const appContainer = document.getElementById('app-container');
+        const loginForm = document.getElementById('login-form');
+        const logoutBtn = document.getElementById('logout-btn');
+        const loginError = document.getElementById('login-error');
+        
+        // Sidebar links
+        const dashboardLink = document.getElementById('dashboard-link');
+        const issueItemsLink = document.getElementById('issue-items-link');
+        const returnItemsLink = document.getElementById('return-items-link');
+        const reportsLink = document.getElementById('reports-link');
+        const toolInventoryLink = document.getElementById('tool-inventory-link');
+        
+        // Content sections
+        const dashboardContent = document.getElementById('dashboard-content');
+        const issueItemsContent = document.getElementById('issue-items-content');
+        const returnItemsContent = document.getElementById('return-items-content');
+        const reportsContent = document.getElementById('reports-content');
+        
+        // Current year for footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Login Functionality
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === 'Dehiattakandiya' && password === 'Vidul2025') {
+                loginError.textContent = '';
+                loginPage.style.display = 'none';
+                appContainer.style.display = 'block';
+                loadDashboardData();
+            } else {
+                loginError.textContent = 'Invalid username or password';
+            }
+        });
+
+        // Logout Functionality
+        logoutBtn.addEventListener('click', () => {
+            loginPage.style.display = 'flex';
+            appContainer.style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        });
+
+        // Navigation
+        dashboardLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('dashboard');
+            setActiveLink(dashboardLink);
+            loadDashboardData();
+        });
+
+        issueItemsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('issue-items');
+            setActiveLink(issueItemsLink);
+            loadIssuedItems();
+        });
+
+        returnItemsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('return-items');
+            setActiveLink(returnItemsLink);
+            loadReturnedItems();
+        });
+
+        reportsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('reports');
+            setActiveLink(reportsLink);
+        });
+
+        toolInventoryLink.addEventListener('click', (e) => {
+            // This will redirect to tool-inventory.html as specified in the href
+            // No need for additional JavaScript handling
+        });
+
+        function showSection(section) {
+            // Hide all sections
+            dashboardContent.style.display = 'none';
+            issueItemsContent.style.display = 'none';
+            returnItemsContent.style.display = 'none';
+            reportsContent.style.display = 'none';
+            
+            // Show selected section
+            switch(section) {
+                case 'dashboard':
+                    dashboardContent.style.display = 'block';
+                    break;
+                case 'issue-items':
+                    issueItemsContent.style.display = 'block';
+                    break;
+                case 'return-items':
+                    returnItemsContent.style.display = 'block';
+                    break;
+                case 'reports':
+                    reportsContent.style.display = 'block';
+                    break;
+            }
+        }
+
+        function setActiveLink(activeLink) {
+            // Remove active class from all links
+            const links = document.querySelectorAll('.sidebar-menu a');
+            links.forEach(link => link.classList.remove('active'));
+            
+            // Add active class to clicked link
+            activeLink.classList.add('active');
+        }
+
+        // Issue Items Form
+        const issueItemForm = document.getElementById('issue-item-form');
+        const itemsContainer = document.getElementById('items-container');
+        const addItemBtn = document.getElementById('add-item-btn');
+        
+        let itemCount = 1; // Start from 1 since we have one row by default
+
+        // Add new item row
+        addItemBtn.addEventListener('click', () => {
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row form-row';
+            newRow.dataset.index = itemCount;
+            
+            newRow.innerHTML = `
+                <div class="form-control">
+                    <label for="item-name-${itemCount}">Item Name</label>
+                    <input type="text" id="item-name-${itemCount}" placeholder="Enter item name" required>
+                </div>
+                <div class="form-control">
+                    <label for="item-quantity-${itemCount}">Quantity</label>
+                    <input type="number" id="item-quantity-${itemCount}" placeholder="Enter quantity" min="1" required>
+                </div>
+                <div class="form-control">
+                    <label for="item-unit-${itemCount}">Unit (optional)</label>
+                    <input type="text" id="item-unit-${itemCount}" placeholder="kg, liters, etc.">
+                </div>
+                <div class="form-control" style="align-self: flex-end;">
+                    <button type="button" class="btn btn-secondary remove-item" style="padding: 0.75rem;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            itemsContainer.appendChild(newRow);
+            itemCount++;
+            
+            // Enable remove button for the first row if there are multiple rows
+            if (itemCount > 1) {
+                document.querySelector('.remove-item').disabled = false;
+            }
+        });
+
+        // Remove item row
+        itemsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-item') || e.target.closest('.remove-item')) {
+                const row = e.target.closest('.item-row');
+                if (itemsContainer.childElementCount > 1) {
+                    row.remove();
+                    
+                    // If only one row left, disable its remove button
+                    if (itemsContainer.childElementCount === 1) {
+                        document.querySelector('.remove-item').disabled = true;
+                    }
+                }
+            }
+        });
+
+        // Submit issue item form
+        issueItemForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const issuedTo = document.getElementById('issued-to').value;
+            const purpose = document.getElementById('purpose').value;
+            const issueDate = document.getElementById('issue-date').value || new Date().toISOString().split('T')[0];
+            
+            // Collect items data
+            const items = [];
+            const itemRows = document.querySelectorAll('.item-row');
+            
+            itemRows.forEach(row => {
+                const index = row.dataset.index;
+                items.push({
+                    name: document.getElementById(`item-name-${index}`).value,
+                    quantity: parseInt(document.getElementById(`item-quantity-${index}`).value),
+                    unit: document.getElementById(`item-unit-${index}`).value || null
+                });
+            });
+            
+            // Generate job ID (timestamp + random 3 digits)
+            const jobId = `${Date.now()}${Math.floor(Math.random() * 900) + 100}`;
+            
+            try {
+                // Save to Firestore
+                await db.collection('issuedItems').doc(jobId).set({
+                    jobId,
+                    issuedTo,
+                    purpose,
+                    date: issueDate,
+                    items,
+                    status: 'issued',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Update inventory (reduce quantities)
+                for (const item of items) {
+                    await updateInventory(item.name, -item.quantity);
+                }
+                
+                alert('Items issued successfully! Job ID: ' + jobId);
+                issueItemForm.reset();
+                
+                // Reset to one item row
+                while (itemsContainer.childElementCount > 1) {
+                    itemsContainer.lastChild.remove();
+                }
+                document.querySelector('.remove-item').disabled = true;
+                
+                // Reload issued items table
+                loadIssuedItems();
+                loadDashboardData();
+            } catch (error) {
+                console.error('Error issuing items:', error);
+                alert('Failed to issue items. Please try again.');
+            }
+        });
+
+        // Return Items Form
+        const returnItemForm = document.getElementById('return-item-form');
+        const loadJobItemsBtn = document.getElementById('load-job-items');
+        const returnItemsContainer = document.getElementById('return-items-container');
+        
+        loadJobItemsBtn.addEventListener('click', async () => {
+            const jobId = document.getElementById('return-job-id').value.trim();
+            
+            if (!jobId) {
+                alert('Please enter a Job ID');
+                return;
+            }
+            
+            try {
+                const doc = await db.collection('issuedItems').doc(jobId).get();
+                
+                if (!doc.exists) {
+                    alert('Job ID not found');
+                    returnItemsContainer.style.display = 'none';
+                    return;
+                }
+                
+                const data = doc.data();
+                
+                if (data.status === 'returned') {
+                    alert('All items for this job have already been returned');
+                    returnItemsContainer.style.display = 'none';
+                    return;
+                }
+                
+                // Display items to return
+                const itemsToReturn = document.getElementById('items-to-return');
+                itemsToReturn.innerHTML = '';
+                
+                data.items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td><input type="number" value="${item.quantity}" min="0" max="${item.quantity}" class="return-qty"></td>
+                        <td>${item.unit || '-'}</td>
+                    `;
+                    itemsToReturn.appendChild(row);
+                });
+                
+                returnItemsContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error loading job items:', error);
+                alert('Failed to load job items. Please try again.');
+            }
+        });
+
+        returnItemForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const jobId = document.getElementById('return-job-id').value.trim();
+            const notes = document.getElementById('return-notes').value;
+            const returnDate = new Date().toISOString().split('T')[0];
+            
+            // Get quantities to return
+            const returnQuantities = [];
+            const returnQtyInputs = document.querySelectorAll('.return-qty');
+            
+            returnQtyInputs.forEach(input => {
+                returnQuantities.push(parseInt(input.value));
+            });
+            
+            try {
+                // Get the issued items document
+                const doc = await db.collection('issuedItems').doc(jobId).get();
+                const data = doc.data();
+                
+                // Check if all items are being returned
+                let allReturned = true;
+                const items = data.items.map((item, index) => {
+                    if (returnQuantities[index] < item.quantity) {
+                        allReturned = false;
+                    }
+                    return {
+                        ...item,
+                        returnedQuantity: returnQuantities[index]
+                    };
+                });
+                
+                // Create return record
+                const returnId = `${Date.now()}${Math.floor(Math.random() * 900) + 100}`;
+                
+                await db.collection('returns').doc(returnId).set({
+                    returnId,
+                    jobId,
+                    items,
+                    notes,
+                    date: returnDate,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Update issued items status if all returned
+                if (allReturned) {
+                    await db.collection('issuedItems').doc(jobId).update({
+                        status: 'returned'
+                    });
+                }
+                
+                // Update inventory (add returned quantities)
+                for (let i = 0; i < items.length; i++) {
+                    await updateInventory(items[i].name, returnQuantities[i]);
+                }
+                
+                alert('Items returned successfully! Return ID: ' + returnId);
+                returnItemForm.reset();
+                returnItemsContainer.style.display = 'none';
+                
+                // Reload returned items table
+                loadReturnedItems();
+                loadDashboardData();
+            } catch (error) {
+                console.error('Error returning items:', error);
+                alert('Failed to return items. Please try again.');
+            }
+        });
+
+        // Reports Form
+        const reportForm = document.getElementById('report-form');
+        const reportType = document.getElementById('report-type');
+        const timePeriod = document.getElementById('time-period');
+        const customDateRange = document.getElementById('custom-date-range');
+        const reportResults = document.getElementById('report-results');
+        
+        timePeriod.addEventListener('change', () => {
+            customDateRange.style.display = timePeriod.value === 'custom' ? 'flex' : 'none';
+        });
+
+        reportForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const reportTypeValue = reportType.value;
+            const timePeriodValue = timePeriod.value;
+            
+            // Calculate date range based on time period
+            let startDate, endDate = new Date();
+            
+            switch(timePeriodValue) {
+                case 'daily':
+                    startDate = new Date();
+                    break;
+                case 'weekly':
+                    startDate = new Date();
+                    startDate.setDate(startDate.getDate() - 7);
+                    break;
+                case 'monthly':
+                    startDate = new Date();
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    break;
+                case 'annual':
+                    startDate = new Date();
+                    startDate.setFullYear(startDate.getFullYear() - 1);
+                    break;
+                case 'custom':
+                    startDate = new Date(document.getElementById('start-date').value);
+                    endDate = new Date(document.getElementById('end-date').value);
+                    break;
+            }
+            
+            // Format dates for display
+            const formatDate = (date) => {
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            };
+            
+            // Set report title
+            let title = '';
+            switch(reportTypeValue) {
+                case 'issued':
+                    title = 'Issued Items Report';
+                    break;
+                case 'returned':
+                    title = 'Returned Items Report';
+                    break;
+                case 'inventory':
+                    title = 'Inventory Report';
+                    break;
+            }
+            
+            if (timePeriodValue !== 'custom') {
+                title += ` (${formatDate(startDate)} to ${formatDate(endDate)})`;
+            } else {
+                title += ` (Custom Date Range)`;
+            }
+            
+            document.getElementById('report-title').textContent = title;
+            
+            try {
+                let querySnapshot;
+                const resultsTable = document.getElementById('report-results-table');
+                resultsTable.innerHTML = '';
+                
+                if (reportTypeValue === 'issued') {
+                    querySnapshot = await db.collection('issuedItems')
+                        .where('date', '>=', startDate.toISOString().split('T')[0])
+                        .where('date', '<=', endDate.toISOString().split('T')[0])
+                        .get();
+                    
+                    querySnapshot.forEach(doc => {
+                        const data = doc.data();
+                        data.items.forEach(item => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${data.jobId}</td>
+                                <td>${data.date}</td>
+                                <td>${item.name}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.unit || '-'}</td>
+                                <td>${data.issuedTo}</td>
+                                <td>${data.purpose}</td>
+                            `;
+                            resultsTable.appendChild(row);
+                        });
+                    });
+                } else if (reportTypeValue === 'returned') {
+                    querySnapshot = await db.collection('returns')
+                        .where('date', '>=', startDate.toISOString().split('T')[0])
+                        .where('date', '<=', endDate.toISOString().split('T')[0])
+                        .get();
+                    
+                    querySnapshot.forEach(doc => {
+                        const data = doc.data();
+                        data.items.forEach(item => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${data.returnId}</td>
+                                <td>${data.date}</td>
+                                <td>${item.name}</td>
+                                <td>${item.returnedQuantity}</td>
+                                <td>${item.unit || '-'}</td>
+                                <td>${data.jobId}</td>
+                                <td>${data.notes || '-'}</td>
+                            `;
+                            resultsTable.appendChild(row);
+                        });
+                    });
+                } else if (reportTypeValue === 'inventory') {
+                    querySnapshot = await db.collection('inventory').get();
+                    
+                    querySnapshot.forEach(doc => {
+                        const data = doc.data();
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${doc.id}</td>
+                            <td>${data.name}</td>
+                            <td>${data.quantity}</td>
+                            <td>${data.unit || '-'}</td>
+                            <td>${data.category || '-'}</td>
+                            <td>${data.lastUpdated || '-'}</td>
+                        `;
+                        resultsTable.appendChild(row);
+                    });
+                }
+                
+                reportResults.style.display = 'block';
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Failed to generate report. Please try again.');
+            }
+        });
+
+        // Download PDF
+        document.getElementById('download-pdf').addEventListener('click', () => {
+            alert('In a real implementation, this would generate a PDF report. For this demo, it just shows this message.');
+            // In a real app, you would use a library like jsPDF or a server-side PDF generator
+        });
+
+        // View Items Modal
+        const viewItemsModal = document.getElementById('view-items-modal');
+        const modalCloseBtns = document.querySelectorAll('.close, .close-modal');
+        
+        modalCloseBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                viewItemsModal.style.display = 'none';
+            });
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === viewItemsModal) {
+                viewItemsModal.style.display = 'none';
+            }
+        });
+
+        // Helper Functions
+        async function updateInventory(itemName, quantityChange) {
+            try {
+                // Find the item in inventory
+                const querySnapshot = await db.collection('inventory')
+                    .where('name', '==', itemName)
+                    .get();
+                
+                if (querySnapshot.empty) {
+                    console.warn(`Item "${itemName}" not found in inventory. Creating new entry.`);
+                    
+                    // Create new inventory item with initial quantity
+                    await db.collection('inventory').add({
+                        name: itemName,
+                        quantity: quantityChange > 0 ? quantityChange : 0,
+                        lastUpdated: new Date().toISOString().split('T')[0],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    return;
+                }
+                
+                // Update existing inventory item
+                const doc = querySnapshot.docs[0];
+                const currentQuantity = doc.data().quantity;
+                const newQuantity = currentQuantity + quantityChange;
+                
+                if (newQuantity < 0) {
+                    console.warn(`Inventory quantity for "${itemName}" would go negative. Setting to 0.`);
+                    await doc.ref.update({
+                        quantity: 0,
+                        lastUpdated: new Date().toISOString().split('T')[0]
+                    });
+                } else {
+                    await doc.ref.update({
+                        quantity: newQuantity,
+                        lastUpdated: new Date().toISOString().split('T')[0]
+                    });
+                }
+            } catch (error) {
+                console.error('Error updating inventory:', error);
+                throw error;
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Count active jobs (issued but not fully returned)
+                const activeJobsQuery = await db.collection('issuedItems')
+                    .where('status', '==', 'issued')
+                    .get();
+                
+                document.getElementById('active-jobs-count').textContent = activeJobsQuery.size;
+                
+                // Count returned items today
+                const today = new Date().toISOString().split('T')[0];
+                const returnedItemsQuery = await db.collection('returns')
+                    .where('date', '==', today)
+                    .get();
+                
+                let returnedItemsCount = 0;
+                returnedItemsQuery.forEach(doc => {
+                    returnedItemsCount += doc.data().items.length;
+                });
+                
+                document.getElementById('returned-items-count').textContent = returnedItemsCount;
+                
+                // Count recent activities (transactions today)
+                const issuedTodayQuery = await db.collection('issuedItems')
+                    .where('date', '==', today)
+                    .get();
+                
+                document.getElementById('recent-activities-count').textContent = 
+                    issuedTodayQuery.size + returnedItemsQuery.size;
+                
+                // Load recent transactions (last 10)
+                const recentTransactions = await db.collection('issuedItems')
+                    .orderBy('createdAt', 'desc')
+                    .limit(10)
+                    .get();
+                
+                const transactionsTable = document.getElementById('recent-transactions');
+                transactionsTable.innerHTML = '';
+                
+                recentTransactions.forEach(doc => {
+                    const data = doc.data();
+                    const firstItem = data.items[0];
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data.jobId}</td>
+                        <td>${firstItem.name}${data.items.length > 1 ? ` +${data.items.length - 1} more` : ''}</td>
+                        <td>${firstItem.quantity}</td>
+                        <td>${data.issuedTo}</td>
+                        <td>${data.date}</td>
+                        <td><span class="status-badge ${data.status}">${data.status}</span></td>
+                    `;
+                    
+                    // Add click event to view all items
+                    row.style.cursor = 'pointer';
+                    row.addEventListener('click', () => {
+                        openViewItemsModal(data);
+                    });
+                    
+                    transactionsTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        async function loadIssuedItems() {
+            try {
+                const querySnapshot = await db.collection('issuedItems')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                const issuedItemsTable = document.getElementById('issued-items-table');
+                issuedItemsTable.innerHTML = '';
+                
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const firstItem = data.items[0];
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data.jobId}</td>
+                        <td>${data.issuedTo}</td>
+                        <td>${data.purpose}</td>
+                        <td>${data.date}</td>
+                        <td>${firstItem.name} (${firstItem.quantity}${firstItem.unit ? ' ' + firstItem.unit : ''})${data.items.length > 1 ? ` +${data.items.length - 1} more` : ''}</td>
+                        <td><span class="status-badge ${data.status}">${data.status}</span></td>
+                        <td>
+                            <button class="btn btn-secondary view-items-btn" data-jobid="${data.jobId}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    `;
+                    
+                    issuedItemsTable.appendChild(row);
+                });
+                
+                // Add event listeners to view buttons
+                document.querySelectorAll('.view-items-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const jobId = e.target.closest('button').dataset.jobid;
+                        const doc = await db.collection('issuedItems').doc(jobId).get();
+                        openViewItemsModal(doc.data());
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading issued items:', error);
+            }
+        }
+
+        async function loadReturnedItems() {
+            try {
+                const querySnapshot = await db.collection('returns')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                const returnedItemsTable = document.getElementById('returned-items-table');
+                returnedItemsTable.innerHTML = '';
+                
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const firstItem = data.items[0];
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data.returnId}</td>
+                        <td>${data.jobId}</td>
+                        <td>${data.date}</td>
+                        <td>${firstItem.name} (${firstItem.returnedQuantity}${firstItem.unit ? ' ' + firstItem.unit : ''})${data.items.length > 1 ? ` +${data.items.length - 1} more` : ''}</td>
+                        <td>${data.notes || '-'}</td>
+                    `;
+                    
+                    returnedItemsTable.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading returned items:', error);
+            }
+        }
+
+        function openViewItemsModal(jobData) {
+            document.getElementById('modal-job-id').textContent = jobData.jobId;
+            document.getElementById('modal-issued-to').textContent = jobData.issuedTo;
+            document.getElementById('modal-purpose').textContent = jobData.purpose;
+            document.getElementById('modal-date').textContent = jobData.date;
+            
+            const itemsList = document.getElementById('modal-items-list');
+            itemsList.innerHTML = '';
+            
+            jobData.items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.unit || '-'}</td>
+                `;
+                itemsList.appendChild(row);
+            });
+            
+            viewItemsModal.style.display = 'flex';
+        }
+
+        // Initialize date fields
+        document.getElementById('issue-date').valueAsDate = new Date();
+        document.getElementById('start-date').valueAsDate = new Date();
+        document.getElementById('end-date').valueAsDate = new Date();
+    </script>
+</body>
+</html>
